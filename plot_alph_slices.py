@@ -38,5 +38,5 @@ plotter_kwargs = { 'col_inch' : float(args['--col_inch']), 'row_inch' : float(ar
 
 plotter.setup_grid(num_rows=1, num_cols=2, **plotter_kwargs)
 plotter.add_colormesh('alpha', x_basis='x', y_basis='z', cmap='Blues', vmin=0, vmax=1)
-plotter.add_colormesh('u', x_basis='x', y_basis='z', cmap='PuOr_r', vector_ind=0)
+plotter.add_colormesh('u', x_basis='x', y_basis='z', cmap='PuOr_r', vector_ind=1)
 plotter.plot_colormeshes(start_fig=start_fig, dpi=int(args['--dpi']))

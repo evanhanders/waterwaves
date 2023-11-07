@@ -65,18 +65,33 @@ grad_alpha = d3.grad(alpha) + ez*lift(tau_a1) # First-order reduction
 
 #Two-fluid terms
 rho = rho_water_nd* alpha + rho_air_nd*(1-alpha)
-alpha_diffusion = water_viscosity_kinematic_nd/10
+alpha_diffusion = water_viscosity_kinematic_nd/2
 grad_alp = d3.grad(alpha)
-kap = d3.div(grad_alp) / np.sqrt(grad_alp@grad_alp)
+kap = d3.div( grad_alp / np.sqrt(grad_alp@grad_alp) )
 
 print('water_viscosity_kinematic_nd = ', water_viscosity_kinematic_nd)
 
-F_grav = (-gravity_nd*ez)*ez@d3.grad(rho)/rho
+F_grav = (-gravity_nd)*d3.grad(rho)/rho #dt(u) + grad(p)/rho0 = g 
 F_st = (sigma_st_nd/rho)*kap*grad_alp
 
 # Problem
 # First-order form: "div(f)" becomes "trace(grad_f)"
 # First-order form: "lap(f)" becomes "div(grad_f)"
+
+#div(u) = dx(u) + dz(w) -> 1j * kx * u + dz(w)
+#works great when kx > 0, but when kx = 0, you get dz(w) + tau_p = 0.
+#We have two boundary conditions, saying that w = 0 at z = 0 and w = 0 at z = Lz.
+
+
+#To do the diffusion properly, which looks like kin_visc = visc_water_nd* alpha + visc_air_nd*(1-alpha), 
+# let's say visc_water_nd > visc_air_nd
+# then we could write viscosity = visc_water_nd - visc_water_nd + visc_water_nd* alpha + visc_air_nd*(1-alpha)
+# then we could write viscosity = visc_water_nd + visc_water_nd* (alpha-1) + visc_air_nd*(1-alpha)
+# or viscosity = visc_water_nd + (visc_water_nd - visc_air_nd) * (alpha-1) = visc_water_nd + visc_extra_nd
+# dt(u) - visc_water*lap(u) = +visc_extra*lap(u)
+
+#momentum equation is dt(rho*u) = stuff => rho*dt(u) + u*dt(rho) = stuff, and we're neglecting the u*dt(rho) term right now.
+
 problem = d3.IVP([p, alpha, u, tau_p, tau_a1, tau_a2, tau_u1, tau_u2], namespace=locals())
 problem.add_equation("trace(grad_u) + tau_p = 0")
 problem.add_equation("dt(alpha) - alpha_diffusion*div(grad_alpha) + lift(tau_a2) = - u@grad(alpha)")
@@ -92,7 +107,17 @@ solver = problem.build_solver(timestepper)
 solver.stop_sim_time = stop_sim_time
 
 # Initial conditions
-alpha['g'] = 1 - 1/(1+np.exp(-(z-(0.5+0.001*np.sin(2*np.pi*x/Lx)))/0.025)) #sigmoid with water at bottom and air on top.
+from scipy.special import erf
+
+def one_to_zero(x, x0, width=0.1):
+    """ One minus Smooth Heaviside function (1 - H) """
+    return (1 - erf( (x - x0)/width))/2
+
+def zero_to_one(*args, **kwargs):
+    """ Smooth Heaviside Function """
+    return -(one_to_zero(*args, **kwargs) - 1)
+
+alpha['g'] = one_to_zero(z, 0.5+0.1*np.sin(2*np.pi*x/Lx), width=0.05)
 
 # Analysis
 snapshots = solver.evaluator.add_file_handler('snapshots', sim_dt=0.1, iter=20, max_writes=50)
