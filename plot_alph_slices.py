@@ -31,12 +31,16 @@ out_name    = args['--out_name']
 n_files     = args['--n_files']
 if n_files is not None: 
     n_files = int(n_files)
+    print(n_files)
 
 # Create Plotter object, tell it which fields to plot
 plotter = SlicePlotter(root_dir, file_dir=data_dir, out_name=out_name, start_file=start_file, n_files=n_files)
-plotter_kwargs = { 'col_inch' : float(args['--col_inch']), 'row_inch' : float(args['--row_inch']) }
-
-plotter.setup_grid(num_rows=1, num_cols=2, **plotter_kwargs)
+#plotter_kwargs = { 'col_inch' : float(args['--col_inch']), 'row_inch' : float(args['--row_inch']) }
+plotter_kwargs = { 'col_inch' : 4.5, 'row_inch' : 1.5 }
+plotter.setup_grid(num_rows=3, num_cols=1, **plotter_kwargs)
 plotter.add_colormesh('alpha', x_basis='x', y_basis='z', cmap='Blues', vmin=0, vmax=1)
-plotter.add_colormesh('u', x_basis='x', y_basis='z', cmap='PuOr_r', vector_ind=1)
-plotter.plot_colormeshes(start_fig=start_fig, dpi=int(args['--dpi']))
+plotter.add_colormesh('u', x_basis='x', y_basis='z', cmap='PuOr_r', vector_ind=0)
+plotter.add_colormesh('vorticity', x_basis='x', y_basis='z', cmap='PuOr_r')
+#plotter.add('u_coeff')
+#plotter.plot_colormeshes(start_fig=start_fig, dpi=int(args['--dpi']))
+plotter.plot_colormeshes(start_fig=start_fig, dpi=200)
